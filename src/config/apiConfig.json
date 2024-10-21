@@ -1,0 +1,20 @@
+{
+    "getPokes": {
+      "url": "https://pokeapi.co/api/v2/pokemon?limit=2&offset="
+
+    },
+    "getPokebyName": {
+      "url": "https://pokeapi.co/api/v2/pokemon/"
+    },
+    "getPokeSpecies": {
+      "url": "https://pokeapi.co/api/v2/pokemon-species/"
+    },
+    "getPoketype": {
+      "url": "https://pokeapi.co/api/v2/type/"
+    },
+    "getPokeAbility": {
+      "url": "https://pokeapi.co/api/v2/ability/"
+    }
+  
+}
+
