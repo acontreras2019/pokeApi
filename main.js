@@ -10,7 +10,7 @@ const Pokemonabilities = require('./src/models/pokemonabilities.js');
 
 // Configuración global para almacenar la ruta de almacenamiento
 
-console.log(app.getPath('userData'))
+// console.log(app.getPath('userData'))
 const configFilePath = path.join(app.getPath('userData'), 'config.json'); // archivo donde se guardará el path de preferencia del usuario
 
 let mainWindow;
@@ -18,7 +18,7 @@ let popupWindow;
 let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
 
 
-
+// Función para crear la ventana principal
     function createWindow() {
        mainWindow = new BrowserWindow({
         width: 800,
@@ -34,10 +34,10 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
       mainWindow.loadFile('src/index.html');
 
       // Solo abrir DevTools en desarrollo
-      mainWindow.webContents.openDevTools();
+     // mainWindow.webContents.openDevTools();
     }
   
-    // Función para crear la ventana emergente
+    // Función para crear la ventana emergente de seleccion de Path por el usuario
     function createPopupWindow() {
       popupWindow = new BrowserWindow({
           width: 400,
@@ -57,7 +57,7 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
           popupWindow.show(); // Mostrar el popup cuando esté listo
       });
 
-      popupWindow.webContents.openDevTools();
+      //popupWindow.webContents.openDevTools();
     }
 
   // Funciones para procesar el JSON y extraer la lista de Pokemons
@@ -84,6 +84,7 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
       return pokemon;
     }
 
+      // Funciones para procesar el JSON y extraer la lista de Abilidades
     function extractAbilityListt(data) {
       // funcion transformacion de Json Abilities to Ability model
         const AbilityList = []
@@ -100,17 +101,11 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
         return AbilityList;
     }
 
-
-    function getIdByUrl(url){
-      const idUrlParts = url.split('/');
-      const Id = idUrlParts[idUrlParts.length - 2];
-      return Id
-    }
-
+      // Funciones para procesar el JSON y extraer la lista de Species
     function extractSpecies(data) {
         // funcion transformacion de Json Species to Specie model
           
-              console.log(data)
+              // console.log(data)
               const spId = getIdByUrl(data.url)
               const specieName = data.name
 
@@ -121,6 +116,14 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
               specie.capture_rate =  data.name      
           return specie;
     }
+
+   // Funciones para obtener el Id de las url en ApiPokemon
+    function getIdByUrl(url){
+      const idUrlParts = url.split('/');
+      const Id = idUrlParts[idUrlParts.length - 2];
+      return Id
+    }
+
 
     // Función para escribir un log
     function writeLog(filename, functionName, logType, logText) {
@@ -143,10 +146,9 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
       logs.push(newLog);
 
       fs.writeFileSync(logFilePath, JSON.stringify(logs, null, 2)); // Actualizamos el archivo JSON
-      console.log('Log registrado:', newLog);
     }
 
-    // Función para guardar la configuración en el archivo JSON
+    // Función para guardar la configuración Path en el archivo JSON de forma Local
   function saveConfig(config) {
     try {
         fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2));
@@ -160,25 +162,23 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
     }
   }
 
+    // Función para cargar la configuración Path desde el archivo JSON local
+    function loadConfig() {
+        try {
+            if (fs.existsSync(configFilePath)) {
+                const data = fs.readFileSync(configFilePath);
+                return JSON.parse(data);
+            }
+        } catch (err) {
+            msg = `Error al leer el archivo de configuración:${err}`
+            writeLog('main.js', 'loadConfig', 'Error', msg);
+            console.error('Error al leer el archivo de configuración:', err);
+            
+        }
+        return { dataPath: '' };  // Si no existe, devolvemos un objeto vacío por defecto
+    }
 
-  // Función para cargar la configuración desde el archivo JSON
-  function loadConfig() {
-      try {
-          if (fs.existsSync(configFilePath)) {
-              const data = fs.readFileSync(configFilePath);
-              return JSON.parse(data);
-          }
-      } catch (err) {
-          msg = `Error al leer el archivo de configuración:${err}`
-          writeLog('main.js', 'loadConfig', 'Error', msg);
-          console.error('Error al leer el archivo de configuración:', err);
-          
-      }
-      return { dataPath: '' };  // Si no existe, devolvemos un objeto vacío por defecto
-  }
-
-
-
+   // Función para guardar los datos en las tablas de habilidades y sus asociaciones con el pokemon
     async function AddPokemonAsociaciones(pokemonId, data){
       let msg
 
@@ -256,6 +256,7 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
       })
     }
 
+    // Función para guardar los datos en las tablas de species y sus asociaciones con el pokemon
     async function AddPokemonSpecie(pokemonId, data) { // en programacion
       const [reg, created] = await Specie.findOrCreate({
         where: {
@@ -278,7 +279,7 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
       }
     }
 
-  // Request from preload
+  // Request viene desde preload
     ipcMain.on('request-pokemon-list', async (event, pokeName) => {
       const url = Api.getPokebyName.url + pokeName
       const pokeApiResponse = await fetch(url);
@@ -353,7 +354,7 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
       
   });
 
-  // Responder cuando se pulsa el botón de selección de carpeta
+  // Responder cuando se pulsa el botón de selección de carpeta en el popup de preferencias de usuario
   ipcMain.on('select-directory', (event) => {
     dialog.showOpenDialog(popupWindow, {
         properties: ['openDirectory'],
@@ -383,6 +384,7 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
     });
   });
 
+  // Funcion para crear la ventana principal y el popup
 app.whenReady().then(() => {
     createWindow();
 
@@ -398,6 +400,7 @@ app.whenReady().then(() => {
 
 });
 
+ // Funcion que se ejecuta cuando se cierran las ventanas 
 app.on('window-all-closed', function () {
   writeLog('main.js', 'app.on(window-all-closed)', 'eventos', 'La aplicación ha cerrado todas las ventanas.');
   if (process.platform !== 'darwin') app.quit();

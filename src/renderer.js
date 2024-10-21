@@ -7,10 +7,6 @@ document.getElementById('load-pokemon-btn').addEventListener('click', () => {
   window.electronAPI.requestPokemonList(pokeName);// Funcion que se dispara al hacer click en el boton
 });
 
-// document.getElementById('choose-folder-btn').addEventListener('click', () => {
-//   window.electronAPI.requestLogPath();// Funcion que se dispara al hacer click en el boton para seleccionar el path
-// });
-
 
 // Recibir la lista de Pokémon desde el proceso principal
 window.electronAPI.onPokemonList((data) => {
