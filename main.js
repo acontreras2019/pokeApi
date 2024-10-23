@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, dialog  } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const Api = require('./src/config/apiConfig.json');
+const getPokemon = require('./src/services/pokeapi.js');
 const Pokemon = require('./src/models/pokemon.js');
 const Ability = require('./src/models/ability.js');
 const Specie = require('./src/models/specie.js');
@@ -281,8 +282,9 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
 
   // Request viene desde preload
     ipcMain.on('request-pokemon-list', async (event, pokeName) => {
-      const url = Api.getPokebyName.url + pokeName
-      const pokeApiResponse = await fetch(url);
+      // const url = Api.getPokebyName.url + pokeName
+      const pokeApiResponse = await getPokemon(pokeName)
+      // const pokeApiResponse = await  fetch(url);
       let msg
 
       // peticion a PokeApi para obtener datos de Pokemon
