@@ -1,3 +1,7 @@
+const ServicePokemon = require('../src/services/servicePokeapi.js');
+
+const servicePokemon = new ServicePokemon()
+
 describe('PokeAPI', function() {
   let expect;
 
@@ -8,16 +12,15 @@ describe('PokeAPI', function() {
   });
 
   it('should fetch the correct Pokémon data', async function() {
-    const getPokemon = require('../src/services/pokeapi.js');
-    const data = await getPokemon('pikachu');
-    const poke = await data.json()
-    expect(poke.name).to.equal('pikachu');
+    const getPokemon = require('../src/services/servicePokeapi.js');
+    const data = await servicePokemon.getPokemon('pikachu')
+    expect(data.name).to.equal('pikachu');
   });
 
   it('should throw an error for an invalid Pokémon', async function() {
-    const getPokemon = require('../src/services/pokeapi.js');
+    const getPokemon = require('../src/services/servicePokeapi.js');
     try {
-       await getPokemon('invalidPokemon');
+       await servicePokemon.getPokemon('invalidPokemon');
     } catch (error) {
       expect(error.message).to.equal('Error fetching Pokémon data');
     }

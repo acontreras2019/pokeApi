@@ -3,7 +3,7 @@ const { app, BrowserWindow, ipcMain, dialog  } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const Api = require('./src/config/apiConfig.json');
-const getPokemon = require('./src/services/pokeapi.js');
+const ServicePokemon = require('./src/services/servicePokeapi.js');
 const Pokemon = require('./src/models/pokemon.js');
 const Ability = require('./src/models/ability.js');
 const Specie = require('./src/models/specie.js');
@@ -18,6 +18,7 @@ let mainWindow;
 let popupWindow;
 let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
 
+const servicePokemon = new ServicePokemon()
 
 // Función para crear la ventana principal
     function createWindow() {
@@ -283,19 +284,18 @@ let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
   // Request viene desde preload
     ipcMain.on('request-pokemon-list', async (event, pokeName) => {
       // const url = Api.getPokebyName.url + pokeName
-      const pokeApiResponse = await getPokemon(pokeName)
-      // const pokeApiResponse = await  fetch(url);
+      const pokeApiResponse = await servicePokemon.getPokemon(pokeName)
+      console.log(pokeApiResponse)
+  
       let msg
 
       // peticion a PokeApi para obtener datos de Pokemon
-      if(pokeApiResponse.status ==200 ){
+      if(pokeApiResponse.name){
         try{
-          const data = await pokeApiResponse.json();
+          const data = pokeApiResponse
           let pk = extractPokemonList(data);
           let abilities = extractAbilityListt(data.abilities); // obtener las habilidades
           let specie = extractSpecies(data.species); // obtener la specie
-          //console.log(specie)
-          
           
           // revisar si existe en la base de Datos
               try{
