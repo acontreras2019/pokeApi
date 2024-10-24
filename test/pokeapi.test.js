@@ -25,4 +25,9 @@ describe('PokeAPI', function() {
       expect(error.message).to.equal('Error fetching Pokémon data');
     }
   });
+
+  
+
+
+
 });

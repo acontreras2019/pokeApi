@@ -1,5 +1,7 @@
 
 const infoAPI = document.getElementById('info-API');
+const contenedorPoke = document.getElementById('tabla-pokemon');
+const contenedorAbi = document.getElementById('tabla-ability');
 
 document.getElementById('load-pokemon-btn').addEventListener('click', () => {
   const pokeName = document.getElementById('pokemonName').value;
@@ -11,15 +13,10 @@ document.getElementById('load-pokemon-btn').addEventListener('click', () => {
 // Recibir la lista de Pokémon desde el proceso principal
 window.electronAPI.onPokemonList((data) => {
   
-  const contenedorPoke = document.getElementById('tabla-pokemon');
-  const contenedorAbi = document.getElementById('tabla-ability');
-  // Limpiar cualquier tabla existente
-  contenedorPoke.innerHTML = '';
-  contenedorAbi.innerHTML = '';
+  limpiarTabla()
 
   const tableBody = document.createElement('table');
   const tableAbilities =  document.createElement('table');
-
 
   console.log(" render lista pokemon")
   const pokemon = JSON.parse(data);
@@ -77,6 +74,7 @@ window.electronAPI.onPokemonList((data) => {
 
 // Recibir error del proceso principal
 window.electronAPI.errorMessage((error) => {
+  limpiarTabla()
    infoAPI.innerText = error
   console.log(error)
 })
@@ -84,7 +82,15 @@ window.electronAPI.errorMessage((error) => {
 
 // Recibir error del proceso Ability
 window.electronAPI.errorAbilityMessage((error) => {
+  limpiarTabla()
   infoAPI.innerText = error
  console.log(error)
 })
 
+function limpiarTabla(){
+
+    // Limpiar cualquier tabla existente
+    contenedorPoke.innerHTML = '';
+    contenedorAbi.innerHTML = '';
+
+}

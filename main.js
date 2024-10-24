@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const Api = require('./src/config/apiConfig.json');
 const ServicePokemon = require('./src/services/servicePokeapi.js');
+const WriteLogs = require('./src/services/writeLogs.js');
 const Pokemon = require('./src/models/pokemon.js');
 const Ability = require('./src/models/ability.js');
 const Specie = require('./src/models/specie.js');
@@ -12,13 +13,15 @@ const Pokemonabilities = require('./src/models/pokemonabilities.js');
 // Configuración global para almacenar la ruta de almacenamiento
 
 // console.log(app.getPath('userData'))
-const configFilePath = path.join(app.getPath('userData'), 'config.json'); // archivo donde se guardará el path de preferencia del usuario
+
+const servicePokemon = new ServicePokemon()
+const writeLogs = new WriteLogs()
+// const configFilePath = path.join(app.getPath('userData'), 'config.json'); // archivo donde se guardará el path de preferencia del usuario
 
 let mainWindow;
 let popupWindow;
-let globalConfig = loadConfig();  // Cargar configuración al iniciar la app
+let globalConfig = writeLogs.loadConfig();  // Cargar configuración al iniciar la app
 
-const servicePokemon = new ServicePokemon()
 
 // Función para crear la ventana principal
     function createWindow() {
@@ -126,138 +129,6 @@ const servicePokemon = new ServicePokemon()
       return Id
     }
 
-
-    // Función para escribir un log
-    function writeLog(filename, functionName, logType, logText) {
-      if (!globalConfig.dataPath) {
-          console.error('No se ha seleccionado una ruta de almacenamiento.');
-          return;
-      }
-
-      const logFilePath = path.join(globalConfig.dataPath, 'appLogs.json');
-      const logs = JSON.parse(fs.readFileSync(logFilePath)); // Leemos los logs actuales
-
-      const newLog = {
-          date: new Date().toISOString(),
-          filename: filename,
-          function: functionName,
-          logType: logType, // "eventos", "errores", "logs del programador", etc.
-          log: logText
-      };
-
-      logs.push(newLog);
-
-      fs.writeFileSync(logFilePath, JSON.stringify(logs, null, 2)); // Actualizamos el archivo JSON
-    }
-
-    // Función para guardar la configuración Path en el archivo JSON de forma Local
-  function saveConfig(config) {
-    try {
-        fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2));
-        msg = `Configuración guardada:${config}`
-        writeLog('main.js', 'saveConfig', 'savePath', msg);
-        console.log(msg);
-    } catch (err) {
-        msg = `Error al guardar el archivo de configuración:${err}`
-        writeLog('main.js', 'saveConfig', 'Error', msg);
-        console.error('Error al guardar el archivo de configuración:', err);
-    }
-  }
-
-    // Función para cargar la configuración Path desde el archivo JSON local
-    function loadConfig() {
-        try {
-            if (fs.existsSync(configFilePath)) {
-                const data = fs.readFileSync(configFilePath);
-                return JSON.parse(data);
-            }
-        } catch (err) {
-            msg = `Error al leer el archivo de configuración:${err}`
-            writeLog('main.js', 'loadConfig', 'Error', msg);
-            console.error('Error al leer el archivo de configuración:', err);
-            
-        }
-        return { dataPath: '' };  // Si no existe, devolvemos un objeto vacío por defecto
-    }
-
-   // Función para guardar los datos en las tablas de habilidades y sus asociaciones con el pokemon
-    async function AddPokemonAsociaciones(pokemonId, data){
-      let msg
-
-      let count = 0
-      data.forEach(async ab => {
-        try{
-          // Obtener o Crear las Abilidades en la base de datos
-          const [reg, created] = await Ability.findOrCreate({
-            where: {
-              id:  ab.id
-            },
-            defaults: {
-              id: ab.id,
-              abilityName: ab.abilityName,
-            },
-          });
-          if (created) {
-            msg = `Habilidad creada ${reg.abilityName}`
-            writeLog('main.js', 'AddPokemonAsociaciones', 'responsebd', msg);
-            console.log(msg); 
-          }
-          else{
-          
-            // enviar al render la info de la base de datos
-            msg = `Habilidad ya existe en bd ${ab.id}`
-            writeLog('main.js', 'AddPokemonAsociaciones', 'responsebd', msg);
-            console.log(msg); 
-
-          }
-          // // Obtener o Crear en la tabla Asociativa Pokemon -Ability en la base de datos 
-          const [pkAbility, regCreated] = await Pokemonabilities.findOrCreate({
-            where: {
-              pokemonId:   pokemonId,
-              abilityId:  ab.id
-            },
-            defaults: {
-              pokemonId: pokemonId,
-              abilityId: ab.id,
-            },
-            
-          });
-          if (regCreated) {
-
-            msg=`Creacion de asociacion correcta ${pkAbility.pokemonId} -${pkAbility.abilityId} `
-            writeLog('main.js', 'AddPokemonAsociaciones', 'responsebd', msg);
-            console.log(msg); 
-            count= count+ 1
-            if(data.length == count){
-              //Obteniendo el nuevo pokemon con las asociaciones
-              const pkNuevo = await Pokemon.findOne({
-                where: {
-                  id:  pokemonId
-                }
-              });
-              if(pkNuevo== null){
-                msg= "Error pkNuevo"
-                writeLog('main.js', 'AddPokemonAsociaciones', 'responsebd', msg);
-                console.log(msg); 
-            }
-            else{
-            
-              // enviar al render la info de la base de datos
-              console.log(`Habilidad ya existe en bd ${ab.id}`)
-            }
-          }
-        }
-
-        }catch(err){
-          //Enviar el error
-          console.log(err)
-          writeLog('main.js', 'AddPokemonAsociaciones', 'responsebd', err);
-          event.sender.send('ab-listError', err);
-        }
-
-      })
-    }
-
     // Función para guardar los datos en las tablas de species y sus asociaciones con el pokemon
     async function AddPokemonSpecie(pokemonId, data) { // en programacion
       const [reg, created] = await Specie.findOrCreate({
@@ -285,7 +156,6 @@ const servicePokemon = new ServicePokemon()
     ipcMain.on('request-pokemon-list', async (event, pokeName) => {
       // const url = Api.getPokebyName.url + pokeName
       const pokeApiResponse = await servicePokemon.getPokemon(pokeName)
-      console.log(pokeApiResponse)
   
       let msg
 
@@ -299,58 +169,36 @@ const servicePokemon = new ServicePokemon()
           
           // revisar si existe en la base de Datos
               try{
-                const [reg, created] = await Pokemon.findOrCreate({
-                  where: {
-                    pokemonName:  pk.pokemonName
-                  },
-                  defaults: {
-                    id: pk.id,
-                    pokemonName: pk.pokemonName,
-                    is_default: pk.is_default,
-                    order:  pk.order,
-                    weight: pk.weight
-                  }
-                  ,
-                  include: { model: Ability , as: "abilities"  }
-                });
-                if (created) {
-                  // Pokemon creado en la bb
-                    msg = `Pokemon CREADO en bd: ${pk.pokemonName} `
-                    writeLog('main.js', 'request-pokemon-list', 'responsebd', msg);
-                    console.log(msg)
-                    await AddPokemonAsociaciones (pk.id,abilities) // funcion para agregar informacion a  tablas ability
-                    //await AddPokemonSpecie (pk.id,specie) // funcion para agregar informacion a tablas specie , pendiente programacion
 
-                    const json  = {pk, abilities}
-                    event.sender.send('pokemon-list', JSON.stringify(json));} // envio de datos del pokemon al render
-                else{
-                  // enviar al render la info de la base de datos
-                  msg = `Pokemon ya existe en bd: ${reg.pokemonName}`
-                  console.log(msg)
-                  writeLog('main.js', 'request-pokemon-list', 'responsebd', msg);
-                  event.sender.send('pokemon-list', JSON.stringify((reg)));// envio de datos del pokemon al render
+                const res = await servicePokemon.findOrCreatePokemon(pk, abilities)
+                if(res){
+                  const json  = {pk, abilities}
+                   event.sender.send('pokemon-list', JSON.stringify(json)); // envio de datos del pokemon al render
+                  
                 }
+                else{
 
-              }
+                  event.sender.send('pokemon-list', JSON.stringify((res)));// envio de datos del pokemon al render
+                  
+                }
+              }   
               catch(err){
                 //Enviar el error
                 console.log(err)
-                writeLog('main.js', 'request-pokemon-list', 'responsebd', error);
+                writeLogs.writeLog('main.js', 'request-pokemon-list', 'responsebd', error);
                 event.sender.send('pokemon-listError', err);
               }
-        
-          return data;
         }
         catch(error){
           //Enviar el error
           console.log(error)
-          writeLog('main.js', 'request-pokemon-list', 'pokemon-listError', error);
+          writeLogs.writeLog('main.js', 'request-pokemon-list', 'pokemon-listError', error);
           event.sender.send('pokemon-listError', error);
         }
       }
       else{  
-          const error = "Pokemon no existe en la API"
-          writeLog('main.js', 'request-pokemon-list', 'responseApi', error);
+          const error = `Pokemon no existe en la API: ${pokeName}`
+          writeLogs.writeLog('main.js', 'request-pokemon-list', 'responseApi', error);
           event.sender.send('pokemon-listError', error);
       }
       
@@ -373,7 +221,7 @@ const servicePokemon = new ServicePokemon()
         }
 
         // Guardar la ruta en el archivo de configuración
-        saveConfig(globalConfig);
+        writeLogs.saveConfig(globalConfig);
 
         popupWindow.close(); // Cerrar la ventana emergente después de seleccionar
         return { success: true, dataPath: globalConfig.dataPath };
@@ -404,7 +252,7 @@ app.whenReady().then(() => {
 
  // Funcion que se ejecuta cuando se cierran las ventanas 
 app.on('window-all-closed', function () {
-  writeLog('main.js', 'app.on(window-all-closed)', 'eventos', 'La aplicación ha cerrado todas las ventanas.');
+  writeLogs.writeLog('main.js', 'app.on(window-all-closed)', 'eventos', 'La aplicación ha cerrado todas las ventanas.');
   if (process.platform !== 'darwin') app.quit();
 });
 
